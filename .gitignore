@@ -1,0 +1,17 @@
+# Virtual environment
+.venv/
+
+# Python and test caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Secrets and local settings
+.env
+.env.*
+!.env.example
+.vscode/
+
+# Operating system files
+.DS_Store
+Thumbs.db
