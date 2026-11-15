@@ -1,0 +1,13 @@
+product_id,product_name,category,reference_price_pkr
+PRD-001,Wireless Mouse,Accessories,2500
+PRD-002,USB Keyboard,Accessories,3500
+PRD-003,USB-C Cable,Accessories,1200
+PRD-004,65W USB-C Charger,Accessories,4500
+PRD-005,Wireless Headphones,Audio,8500
+PRD-006,Bluetooth Speaker,Audio,6500
+PRD-007,24-inch LED Monitor,Monitors,38000
+PRD-008,27-inch LED Monitor,Monitors,55000
+PRD-009,8GB DDR4 RAM,Computer Components,6000
+PRD-010,512GB SSD,Computer Components,10500
+PRD-011,15-inch Laptop 8GB 256GB,Laptops,125000
+PRD-012,Android Smartphone 128GB,Smartphones,55000
