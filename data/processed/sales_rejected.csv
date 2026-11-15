@@ -1,0 +1,31 @@
+transaction_id,line_id,date,product_id,product_name,category,quantity,unit_price,rejection_reason
+TXN-001429,LINE-001766,2026-08-20,PRD-009,8GB DDR4 RAM,Computer Components,1,0,unit_price must be a positive finite number
+TXN-001903,LINE-002346,2026-09-24,PRD-003,USB-C Cable,Accessories,1,,unit_price must be a positive finite number
+TXN-002434,LINE-003007,2026-10-31,PRD-005,Wireless Headphones,Audio,,8500.0,quantity must be a positive whole number
+TXN-001017,LINE-001262,2026-07-21,PRD-006,Bluetooth Speaker,Audio,,6500.0,quantity must be a positive whole number
+TXN-002332,LINE-002884,2026-10-24,UNKNOWN,27-inch LED Monitor,Monitors,1,55000.0,unknown product_id
+TXN-000690,LINE-000859,invalid-date,PRD-001,Wireless Mouse,Accessories,2,2500.0,invalid date
+TXN-001135,LINE-001411,2026-07-30,PRD-012,Android Smartphone 128GB,Smartphones,1,,unit_price must be a positive finite number
+TXN-000235,LINE-000287,2026-05-20,PRD-008,27-inch LED Monitor,Monitors,-2,55000.0,quantity must be a positive whole number
+TXN-002305,LINE-002853,2026-10-22,PRD-009,8GB DDR4 RAM,Computer Components,-2,5700.0,quantity must be a positive whole number
+TXN-001947,LINE-002401,2026-09-27,PRD-009,8GB DDR4 RAM,Computer Components,,5400.0,quantity must be a positive whole number
+TXN-000366,LINE-000448,2026-05-30,PRD-007,24-inch LED Monitor,Monitors,1,,unit_price must be a positive finite number
+TXN-001386,LINE-001712,2026-08-17,PRD-010,512GB SSD,Computer Components,two,10500.0,quantity must be a positive whole number
+TXN-000481,LINE-000585,invalid-date,PRD-009,8GB DDR4 RAM,Computer Components,1,6000.0,invalid date
+TXN-002415,LINE-002981,2026-10-29,PRD-004,65W USB-C Charger,Accessories,,4275.0,quantity must be a positive whole number
+TXN-000950,LINE-001182,2026-07-16,PRD-003,USB-C Cable,Accessories,1,0,unit_price must be a positive finite number
+TXN-000007,LINE-000007,2026-05-01,PRD-008,27-inch LED Monitor,Monitors,-2,49500.0,quantity must be a positive whole number
+TXN-000583,LINE-000723,2026-06-18,UNKNOWN,512GB SSD,Computer Components,1,10500.0,unknown product_id
+TXN-002109,LINE-002606,2026-10-08,PRD-002,USB Keyboard,Accessories,2,,unit_price must be a positive finite number
+TXN-000296,LINE-000365,2026-05-25,PRD-001,Wireless Mouse,Accessories,2,,unit_price must be a positive finite number
+TXN-000886,LINE-001102,invalid-date,PRD-012,Android Smartphone 128GB,Smartphones,1,55000.0,invalid date
+TXN-001744,LINE-002151,2026-09-12,PRD-006,Bluetooth Speaker,Audio,two,6500.0,quantity must be a positive whole number
+TXN-002431,LINE-003003,2026-10-30,PRD-008,27-inch LED Monitor,Monitors,1,0,unit_price must be a positive finite number
+TXN-000322,LINE-000397,2026-05-27,PRD-003,USB-C Cable,Accessories,-2,1080.0,quantity must be a positive whole number
+TXN-001317,LINE-001631,invalid-date,PRD-008,27-inch LED Monitor,Monitors,1,52250.0,invalid date
+TXN-001237,LINE-001535,2026-08-06,UNKNOWN,65W USB-C Charger,Accessories,3,4050.0,unknown product_id
+TXN-001383,LINE-001708,2026-08-17,PRD-008,27-inch LED Monitor,Monitors,two,55000.0,quantity must be a positive whole number
+TXN-000566,LINE-000699,2026-06-16,PRD-008,27-inch LED Monitor,Monitors,1,0,unit_price must be a positive finite number
+TXN-002165,LINE-002681,2026-10-12,PRD-005,Wireless Headphones,Audio,two,8500.0,quantity must be a positive whole number
+TXN-000619,LINE-000764,2026-06-21,UNKNOWN,27-inch LED Monitor,Monitors,1,55000.0,unknown product_id
+TXN-001364,LINE-001686,2026-08-16,PRD-005,Wireless Headphones,Audio,,8500.0,quantity must be a positive whole number
