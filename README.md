@@ -50,7 +50,7 @@ python -m pip install -r requirements.txt
 ```
 
 If PowerShell blocks activation, use the environment's interpreter
-directly, for example:
+directly:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
@@ -263,19 +263,34 @@ prediction for 8 May 2026 is 3 units.
 This provides a simple benchmark for the weekly pattern built into the
 synthetic sample. It has no fitted parameters.
 
-### Baseline decision and trade-off
+### Baseline decisions and trade-offs
 
-I chose the value from exactly seven days earlier to preserve the
-same-weekday pattern and keep the baseline easy to explain. Compared with
-a longer-window mean, this gives up smoothing across multiple observations:
-one unusual sale day can produce a poor forecast the following week.
-An overall mean would be more stable but could blur weekday differences;
-a mean across several matching weekdays could preserve that pattern,
-but would need more history and respond more slowly to recent changes.
+#### Choose a seven-day lag
 
-The baseline also cannot directly account for promotions, holidays,
-or stockouts. Future models should be compared against it using the
-same evaluation rows.
+I chose a seven-day lag because it preserves the same-weekday sales
+pattern and gives us a simple benchmark. The trade-off is that it relies
+on one past observation, so an unusual sales day can distort the following
+week's forecast. A longer-window mean would smooth random variation but
+could blur weekday differences; averaging several matching weekdays would
+preserve that pattern but require more history.
+
+#### Leave unknown lag values unavailable
+
+If the total exactly seven days earlier is unknown, the script leaves
+the prediction unavailable rather than substituting zero or an average.
+
+Trade-off: fewer forecasts are available, but the baseline does not
+invent historical sales values.
+
+#### Report MAE alongside evaluation coverage
+
+MAE is calculated only where both the prediction and actual total are
+known. Coverage and per-product results show which observations could
+be evaluated.
+
+Trade-off: the score is interpretable for the evaluated rows, but may not
+represent excluded products or uncertain days. Future models must be
+compared on the same evaluation rows.
 
 ### Run the baseline
 
@@ -446,6 +461,8 @@ baseline's validation.
   outside the current sample.
 - Missing records do not automatically imply zero sales in real data.
 - Conservative uncertainty rules prevent scoring three products.
+- The baseline does not directly account for promotions, holidays,
+  changing trends, or stockouts.
 - Outlier detection has not been implemented.
 - Python versions other than 3.10.11 and 3.14 have not been individually
   verified.
