@@ -1,0 +1,12 @@
+{
+  "method": "weekly_seasonal_naive",
+  "horizon_days": 1,
+  "season_length_days": 7,
+  "evaluation": "expanding-history one-day walk-forward",
+  "eligible_product_days": 2124,
+  "predictions_available": 1545,
+  "scored_product_days": 1497,
+  "scoring_coverage_percent": 70.48,
+  "mae_units": 1.965931863727455,
+  "data_scope": "Retrospective evaluation on a fixed audited dataset; record arrival timestamps are unavailable."
+}
