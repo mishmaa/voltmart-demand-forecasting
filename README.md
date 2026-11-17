@@ -23,12 +23,14 @@ introduced errors.
 
 ## Requirements
 
-- Python 3.14: tested development environment.
-- Dependencies listed in requirements.txt.
+- Python 3.10 or newer.
+- Tested on Python 3.10.11 and Python 3.14.
+- Intermediate Python versions have not been individually tested.
 - Commands below use Windows PowerShell.
 
-Compatibility with Python 3.10–3.13 has not yet been verified.
-The pinned dependencies may require a newer Python version.
+requirements.txt contains dependency ranges for compatible installation.
+requirements-py310.txt and requirements-py314.txt preserve the exact
+dependency versions from the tested environments.
 
 ## Setup
 
@@ -368,8 +370,11 @@ Tests cover:
 - Earlier predictions remaining unchanged when later daily values change
   or future days are appended.
 
-Task 1 was also verified in a fresh environment. Task 2's fresh-environment
-and additional command-line checks are still pending.
+All 35 tests passed on Python 3.10.11 and Python 3.14.
+The cleaning, daily aggregation, and baseline scripts were also verified
+in a fresh Python 3.10 environment and reproduced the tracked outputs.
+The baseline's missing-file check returned a clear error, exit code 1,
+and no traceback.
 
 ## Error handling
 
