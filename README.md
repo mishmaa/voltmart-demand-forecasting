@@ -351,6 +351,9 @@ Coverage is reported alongside MAE so missing evaluations remain visible.
 | Overall MAE | Approximately 1.966 units |
 | Products with scored forecasts | 9 of 12 |
 
+
+Three products (PRD-001, PRD-008, PRD-009) are excluded from MAE because each has an unresolved invalid-date sale, so their history is treated as unknown.
+
 The average absolute miss is approximately two units per scored product-day.
 
 The following products have uncertain histories because of unresolved
