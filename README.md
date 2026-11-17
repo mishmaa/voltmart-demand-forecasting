@@ -312,6 +312,7 @@ Coverage is reported alongside MAE so missing evaluations remain visible.
 | Scored product-days | 1,497 |
 | Scoring coverage | 70.48% |
 | Overall MAE | Approximately 1.966 units |
+| Products with scored forecasts | 9 of 12 |
 
 The average absolute miss is approximately two units per scored product-day.
 
