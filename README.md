@@ -6,7 +6,7 @@ Currently implemented:
 
 - Task 1: Sales data cleaning pipeline — accepted.
 - Task 2: Daily aggregation and weekly seasonal naive baseline —
-  implemented, with final verification in progress.
+  implemented and verified.
 
 ## Data source
 
@@ -101,6 +101,8 @@ tests/
   test_baseline.py
 README.md
 requirements.txt
+requirements-py310.txt
+requirements-py314.txt
 .gitignore
 ```
 
@@ -251,21 +253,36 @@ Current daily statuses:
 Use a weekly seasonal naive forecast:
 
 ```text
-Prediction for product P on day D = units for product P on day D − 7
+Prediction for product P on day D =
+units sold by product P exactly seven calendar days earlier
 ```
+
+For example, Bluetooth Speaker sold 3 units on 1 May 2026, so its
+prediction for 8 May 2026 is 3 units.
 
 This provides a simple benchmark for the weekly pattern built into the
 synthetic sample. It has no fitted parameters.
 
-Trade-off: it is transparent and easy to reproduce, but cannot directly
-adapt to promotions, changing trends, holidays, or stockouts.
+### Baseline decision and trade-off
 
-Future models should be compared against this baseline using the same
-evaluation rows.
+I chose the value from exactly seven days earlier to preserve the
+same-weekday pattern and keep the baseline easy to explain. Compared with
+a longer-window mean, this gives up smoothing across multiple observations:
+one unusual sale day can produce a poor forecast the following week.
+An overall mean would be more stable but could blur weekday differences;
+a mean across several matching weekdays could preserve that pattern,
+but would need more history and respond more slowly to recent changes.
+
+The baseline also cannot directly account for promotions, holidays,
+or stockouts. Future models should be compared against it using the
+same evaluation rows.
 
 ### Run the baseline
 
+First build the daily table, then evaluate the forecast:
+
 ```powershell
+python src/build_daily_sales.py
 python src/baseline.py
 ```
 
@@ -290,6 +307,11 @@ become available for later predictions.
 - Unknown actual totals are excluded from scoring.
 - Products with no scored days remain visible in the per-product report.
 
+An unknown value on the exact lag date prevents that prediction.
+An unknown actual prevents scoring that day. An unknown value on another
+date does not automatically block the prediction because the method
+only uses the seven-day lag.
+
 This baseline requires no refitting because it has no learned parameters.
 
 ### Score: mean absolute error
@@ -297,7 +319,7 @@ This baseline requires no refitting because it has no learned parameters.
 MAE measures the average absolute prediction error in units:
 
 ```text
-MAE = sum of |actual − prediction| / number of scored product-days
+MAE = sum of |actual - prediction| / number of scored product-days
 ```
 
 Overall MAE gives equal weight to each scored product-day.
@@ -316,8 +338,15 @@ Coverage is reported alongside MAE so missing evaluations remain visible.
 
 The average absolute miss is approximately two units per scored product-day.
 
-PRD-001, PRD-008, and PRD-009 have no evaluable forecasts under the
-uncertainty policy. Their MAE is unavailable, not zero.
+The following products have uncertain histories because of unresolved
+sale dates and are excluded from scoring:
+
+- PRD-001: Wireless Mouse
+- PRD-008: 27-inch LED Monitor
+- PRD-009: 8GB DDR4 RAM
+
+Their MAE is unavailable, not zero. They remain in the daily table and
+per-product report so the exclusions are visible.
 
 These results summarize only scored rows in synthetic data. They do not
 establish real-world forecast accuracy.
@@ -353,7 +382,7 @@ historical forecast date.
 python -m pytest -q
 ```
 
-Current result: 35 tests passed in the development environment.
+All 35 tests passed on Python 3.10.11 and Python 3.14.
 
 Tests cover:
 
@@ -371,7 +400,6 @@ Tests cover:
 - Earlier predictions remaining unchanged when later daily values change
   or future days are appended.
 
-All 35 tests passed on Python 3.10.11 and Python 3.14.
 The cleaning, daily aggregation, and baseline scripts were also verified
 in a fresh Python 3.10 environment and reproduced the tracked outputs.
 The baseline's missing-file check returned a clear error, exit code 1,
@@ -404,7 +432,7 @@ Example baseline failure check:
 python src/baseline.py --input data/processed/does_not_exist.csv
 ```
 
-Expected: a clear file-not-found message and nonzero exit status.
+Expected: a clear file-not-found message, exit code 1, and no traceback.
 
 The aggregation script currently expects Task 1's generated input schema;
 its input validation is less comprehensive than the cleaner's and
@@ -419,7 +447,8 @@ baseline's validation.
 - Missing records do not automatically imply zero sales in real data.
 - Conservative uncertainty rules prevent scoring three products.
 - Outlier detection has not been implemented.
-- Python compatibility beyond the tested environment remains unverified.
+- Python versions other than 3.10.11 and 3.14 have not been individually
+  verified.
 - The baseline currently evaluates historical one-day forecasts; it does
   not yet provide a separate future-date forecasting command.
 - Improved model tuning, broader backtesting, API/container packaging,
