@@ -7,7 +7,7 @@ A project to forecast daily electronics sales and support stock planning.
 - Task 1: Sales data cleaning pipeline — accepted.
 - Task 2: Daily aggregation and weekly seasonal naive baseline — accepted.
 - Task 3: Improved model with tuning — implemented and verified;
-  awaiting submission and review.
+  submitted; awaiting supervisor review.
 
 ## Data source
 
