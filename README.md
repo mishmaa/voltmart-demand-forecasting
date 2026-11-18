@@ -25,7 +25,7 @@ introduced errors.
 ## Requirements
 
 - Python 3.10 or newer.
-- Previously verified on Python 3.10.11 and Python 3.14.
+- Development and compatibility testing used Python 3.14 and Python 3.10.11.
 - Intermediate Python versions have not been individually tested.
 - Commands below use Windows PowerShell.
 
@@ -661,6 +661,13 @@ The aggregation script expects Task 1's generated input schema.
 Its validation is less comprehensive than the cleaner's and baseline's.
 
 ## Evaluation limitations
+
+PRD-001 (Wireless Mouse), PRD-008 (27-inch LED Monitor), and PRD-009
+(8GB DDR4 RAM) each have an unresolved invalid-date sale. Our conservative
+policy marks their entire histories unknown, leaving their October rows
+unscored rather than guessing missing values. Together with unavailable
+history or actual totals for other products, this leaves 188 of 372
+October product-days scored, or 50.54% coverage.
 
 The daily table uses a full-dataset quality audit, including transaction
 date recovery and conservative uncertainty flags.
