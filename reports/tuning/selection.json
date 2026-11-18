@@ -1,0 +1,37 @@
+{
+  "model": "RandomForestRegressor",
+  "sklearn_version": "1.9.1",
+  "training_start": "2026-05-01",
+  "training_end": "2026-08-31",
+  "validation_start": "2026-09-01",
+  "validation_end": "2026-09-30",
+  "reserved_test_start": "2026-10-01",
+  "reserved_test_end": "2026-10-31",
+  "training_rows": 715,
+  "validation_total_rows": 360,
+  "validation_scored_rows": 254,
+  "validation_coverage_percent": 70.56,
+  "candidate_count": 9,
+  "selected_settings": {
+    "max_depth": null,
+    "min_samples_leaf": 10,
+    "n_estimators": 200,
+    "random_state": 42
+  },
+  "selected_validation_mae": 1.4694321295931971,
+  "baseline_validation_mae_same_rows": 2.188976377952756,
+  "validation_mae_reduction": 0.7195442483595589,
+  "feature_columns": [
+    "product_id",
+    "weekday",
+    "month",
+    "days_since_start",
+    "lag_1",
+    "lag_7",
+    "lag_14",
+    "mean_previous_7"
+  ],
+  "evaluation_protocol": "Fixed May-August fitted model; one-day September predictions use historical actuals available before each prediction day. No September refitting.",
+  "test_evaluated": false,
+  "data_limitation": "Features use the fixed retrospectively audited daily table."
+}
