@@ -607,6 +607,12 @@ and product IDs. Tuning rejects missing usable training or validation
 data. Evaluation checks selection metadata, settings, feature columns,
 and the availability of matching test rows.
 
+For prediction-ready October rows, evaluate_model.py checks that each
+product appeared in the usable May–September refit data. An unseen
+product stops evaluation with a clear error and exit code 1 rather than
+receiving an unsupported prediction. Rows without sufficient historical
+features remain unavailable.
+
 Example failure checks:
 
 ```powershell
