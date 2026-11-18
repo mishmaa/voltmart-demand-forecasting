@@ -25,7 +25,7 @@ introduced errors.
 ## Requirements
 
 - Python 3.10 or newer.
-- Tested on Python 3.10.11 and Python 3.14.
+- Previously verified on Python 3.10.11 and Python 3.14.
 - Intermediate Python versions have not been individually tested.
 - Commands below use Windows PowerShell.
 
@@ -34,8 +34,8 @@ requirements-py310.txt and requirements-py314.txt preserve dependency
 versions from the corresponding environments.
 
 Recorded Task 3 model results were generated using Python 3.14 and
-Scikit-learn 1.9.1. Tests also pass on Python 3.10, but identical fitted
-results across different library versions are not guaranteed.
+Scikit-learn 1.9.1. Identical fitted results across different library
+versions are not guaranteed.
 
 ## Setup
 
@@ -525,16 +525,23 @@ generalization estimates.
 | Seasonal naive MAE on matching rows | 1.878 units |
 | Relative MAE reduction | 19.21% |
 
-The model reduced MAE by 19.21% on the 188 matched October rows.
-This does not establish improvement across all products or missing days.
+Coverage is 50.54% because only 188 of 372 October product-days have
+both usable model features and known actual totals. PRD-001, PRD-008,
+and PRD-009 have no scored rows because unresolved invalid-date sales
+cause their entire histories to be marked unknown, making their lag
+features unavailable. The other products also lose days where required
+historical values or actual totals are unknown. The 19.21% MAE reduction
+applies only to the matched scored rows.
 
-PRD-001 (Wireless Mouse), PRD-008 (27-inch LED Monitor), and PRD-009
-(8GB DDR4 RAM) remain unscored because unresolved invalid-date sales
-make their histories unknown under the conservative aggregation policy.
+The excluded products are Wireless Mouse (PRD-001), 27-inch LED Monitor
+(PRD-008), and 8GB DDR4 RAM (PRD-009).
 
 The October baseline score differs from Task 2's overall result because
 the date range and scored rows differ. Task 3 coverage is also lower
 because the model requires more historical values than the baseline.
+
+These results do not establish improvement across all products or
+unobserved days.
 
 ## Output files
 
@@ -561,7 +568,11 @@ because the model requires more historical values than the baseline.
 python -m pytest -q
 ```
 
-All 54 tests passed on Python 3.10 and Python 3.14.
+The current 55-test suite passed on Python 3.14. The preceding 54-test
+suite also passed on Python 3.10.
+
+The additional test verifies that an unseen product with prediction-ready
+October features is rejected because it has no usable refit history.
 
 Tests cover:
 
@@ -578,6 +589,7 @@ Tests cover:
 - October target changes not changing tuning selection.
 - Model fitting restricted to the specified training dates.
 - Matching-row model and baseline scoring.
+- Rejection of unseen prediction-ready products.
 
 The cleaning, aggregation, and baseline scripts were verified in a
 separate Python 3.10 environment and reproduced their tracked outputs.
@@ -586,9 +598,9 @@ The baseline, tuning, and evaluation commands were manually checked
 with nonexistent input paths. Each displayed a plain error, exited with
 code 1, and showed no traceback.
 
-Task 3 tests pass on both Python versions. The recorded Task 3 tuning
-and final evaluation reports were generated on Python 3.14 with
-Scikit-learn 1.9.1; identical fitted results across versions are not claimed.
+Recorded Task 3 tuning and final evaluation reports were generated on
+Python 3.14 with Scikit-learn 1.9.1. Identical fitted results across
+versions are not claimed.
 
 ## Error handling
 
@@ -607,11 +619,27 @@ and product IDs. Tuning rejects missing usable training or validation
 data. Evaluation checks selection metadata, settings, feature columns,
 and the availability of matching test rows.
 
+### Unseen products
+
 For prediction-ready October rows, evaluate_model.py checks that each
 product appeared in the usable May–September refit data. An unseen
-product stops evaluation with a clear error and exit code 1 rather than
-receiving an unsupported prediction. Rows without sufficient historical
-features remain unavailable.
+product stops evaluation with a clear error naming its ID and exit code 1,
+rather than receiving an unsupported prediction.
+
+Rows without sufficient historical features remain unavailable.
+
+Trade-off: rejecting unseen products prevents unsupported predictions,
+but means new products need a separately designed cold-start strategy.
+
+### Empty input and selection files
+
+The evaluation CLI catches ValueError and OSError and exits with a plain
+error message and code 1. This covers empty CSV files, missing input files,
+missing October rows, missing selection files, malformed JSON, and the
+explicit selection validation checks.
+
+Malformed JSON raises JSONDecodeError, a subclass of ValueError.
+An empty CSV raises pandas EmptyDataError, also a subclass of ValueError.
 
 Example failure checks:
 
