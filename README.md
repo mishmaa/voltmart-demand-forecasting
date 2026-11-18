@@ -473,3 +473,30 @@ baseline's validation.
   not yet provide a separate future-date forecasting command.
 - Improved model tuning, broader backtesting, API/container packaging,
   and the final model card and handover belong to later tasks.
+
+  ## Task 3: Tuning plan
+
+Train on May–August 2026, select settings using September, then refit
+the selected model on May–September and evaluate once on October.
+
+Model: RandomForestRegressor.
+
+Predefined search:
+- min_samples_leaf: [2, 5, 10]
+- max_depth: [3, 6, None]
+- n_estimators: 200, fixed
+- random_state: 42, fixed
+- Other settings: library defaults
+
+Evaluate all nine combinations on identical September product-days.
+Choose the lowest validation MAE. For an exact tie, prefer shallower
+trees, then larger leaves.
+
+Decision and trade-off: larger leaves and shallower trees smooth noisy
+sales and limit overfitting, but can miss genuine changes. Smaller leaves
+and deeper trees capture more detail but may fit random variation.
+This is a practical small-data search, not a proven optimal range.
+
+Preserve September history when constructing October lag features.
+Compare the selected model and seasonal naive on matching scored rows,
+and report coverage alongside MAE. October scores will not guide tuning.
