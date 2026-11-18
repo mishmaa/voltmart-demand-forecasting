@@ -1,0 +1,37 @@
+{
+  "model": "RandomForestRegressor",
+  "sklearn_version": "1.9.1",
+  "selected_settings": {
+    "max_depth": null,
+    "min_samples_leaf": 10,
+    "n_estimators": 200,
+    "random_state": 42
+  },
+  "refit_start": "2026-05-01",
+  "refit_end": "2026-09-30",
+  "test_start": "2026-10-01",
+  "test_end": "2026-10-31",
+  "refit_rows": 969,
+  "test_total_product_days": 372,
+  "model_predictions_available": 199,
+  "matched_scored_product_days": 188,
+  "matched_scoring_coverage_percent": 50.54,
+  "total_products": 12,
+  "scored_products": 9,
+  "excluded_product_ids": [
+    "PRD-001",
+    "PRD-008",
+    "PRD-009"
+  ],
+  "model_mae_units": 1.517030978386726,
+  "baseline_mae_same_rows": 1.877659574468085,
+  "mae_reduction_units": 0.3606285960813591,
+  "mae_reduction_percent": 19.206282170905244,
+  "evaluation_protocol": "Fixed model refitted on May-September. October predictions use actual history strictly before each prediction day. No October refitting or hyperparameter selection.",
+  "limitations": [
+    "Fixed retrospectively audited daily data.",
+    "Earlier baseline work included October observations.",
+    "Unknown history and strict feature requirements reduce coverage.",
+    "Synthetic data does not establish real-world accuracy."
+  ]
+}
