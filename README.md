@@ -2,11 +2,12 @@
 
 A project to forecast daily electronics sales and support stock planning.
 
-Currently implemented:
+## Project status
 
 - Task 1: Sales data cleaning pipeline — accepted.
-- Task 2: Daily aggregation and weekly seasonal naive baseline —
-  implemented and verified.
+- Task 2: Daily aggregation and weekly seasonal naive baseline — accepted.
+- Task 3: Improved model with tuning — implemented and verified;
+  awaiting submission and review.
 
 ## Data source
 
@@ -18,7 +19,7 @@ with 12 products. Prices are in Pakistani rupees (PKR).
 Product prices, weekend activity, and growth patterns are illustrative
 assumptions, not findings about VoltMart's actual customers.
 
-See [data/README.md](data/README.md) for the sales schema and deliberately
+See [data/README.md](data/README.md) for the schema and deliberately
 introduced errors.
 
 ## Requirements
@@ -29,8 +30,12 @@ introduced errors.
 - Commands below use Windows PowerShell.
 
 requirements.txt contains dependency ranges for compatible installation.
-requirements-py310.txt and requirements-py314.txt preserve the exact
-dependency versions from the tested environments.
+requirements-py310.txt and requirements-py314.txt preserve dependency
+versions from the corresponding environments.
+
+Recorded Task 3 model results were generated using Python 3.14 and
+Scikit-learn 1.9.1. Tests also pass on Python 3.10, but identical fitted
+results across different library versions are not guaranteed.
 
 ## Setup
 
@@ -41,7 +46,7 @@ git clone https://github.com/mishmaa/voltmart-demand-forecasting.git
 cd voltmart-demand-forecasting
 ```
 
-Create and activate a virtual environment:
+Create and activate an environment:
 
 ```powershell
 python -m venv .venv
@@ -49,29 +54,45 @@ python -m venv .venv
 python -m pip install -r requirements.txt
 ```
 
-If PowerShell blocks activation, use the environment's interpreter
-directly:
+To install the recorded Python 3.14 dependency versions instead:
+
+```powershell
+python -m pip install -r requirements-py314.txt
+```
+
+For the Python 3.10 dependency snapshot, use requirements-py310.txt in a
+Python 3.10 environment.
+
+If PowerShell blocks activation, use the environment's interpreter directly:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-The same interpreter can run the scripts and tests without activation.
+The same interpreter can run scripts and tests without activation.
 
 ## Run the complete workflow
 
-Run these commands from the repository root:
+Run from the repository root:
 
 ```powershell
 python src/generate_sample_data.py
 python src/clean_data.py
 python src/build_daily_sales.py
 python src/baseline.py
+python src/features.py
+python src/tune_model.py
+python src/evaluate_model.py
 python -m pytest -q
 ```
 
 The generator uses seed 42 and overwrites the synthetic raw sample.
-The remaining scripts overwrite their respective output files.
+Other scripts overwrite their respective output files.
+
+The tuning command selects settings using September only.
+The final evaluation reads those settings and scores October.
+Reproduction runs do not justify changing settings in response to
+October's results.
 
 ## Project structure
 
@@ -85,9 +106,18 @@ data/
     sales_clean.csv
     sales_rejected.csv
     daily_sales.csv
+    model_features.csv
 reports/
   cleaning_report.json
   baseline/
+    predictions.csv
+    per_product_metrics.csv
+    metrics.json
+  tuning/
+    search_results.csv
+    selection.json
+    validation_predictions.csv
+  improved_model/
     predictions.csv
     per_product_metrics.csv
     metrics.json
@@ -96,9 +126,15 @@ src/
   clean_data.py
   build_daily_sales.py
   baseline.py
+  features.py
+  tune_model.py
+  evaluate_model.py
 tests/
   test_clean_data.py
   test_baseline.py
+  test_features.py
+  test_tune_model.py
+  test_evaluate_model.py
 README.md
 requirements.txt
 requirements-py310.txt
@@ -108,8 +144,8 @@ requirements-py314.txt
 
 ## Task 1: Data cleaning pipeline
 
-The cleaning pipeline validates transaction lines, repairs supported
-metadata issues, separates unusable records, and produces a quality report.
+The pipeline validates transaction lines, repairs supported metadata
+issues, separates unusable records, and produces a quality report.
 
 ### Run
 
@@ -121,7 +157,7 @@ python src/clean_data.py
 
 - Require all eight sales columns.
 - Trim surrounding whitespace and treat blank strings as missing.
-- Remove exact duplicate records after whitespace normalization.
+- Remove exact duplicates after whitespace normalization.
 - Reject conflicting records sharing a line ID.
 - Require transaction IDs and line IDs.
 - Require valid dates in YYYY-MM-DD format.
@@ -133,35 +169,35 @@ python src/clean_data.py
 - Require positive, finite unit prices.
 - Preserve original rejected values and record rejection reasons.
 
-Transaction prices may differ from the catalogue's reference prices.
+Transaction prices may differ from catalogue reference prices.
 
-Exact duplicate records are counted and removed; they are not included
-in the rejected-record file.
+Exact duplicates are counted and removed; they are not included in the
+rejected-record file.
 
 ### Cleaning decisions and trade-offs
 
 #### Reject missing quantities and prices
 
-The pipeline does not fill these values using a dataset-wide average.
-This avoids inventing transaction values and using future sales
-observations to repair earlier transactions.
+Missing transaction values are not filled using a dataset-wide average.
+This avoids inventing sales values and using future observations to
+repair earlier transactions.
 
-Trade-off: rejecting records loses usable sales information. Aggregating
-only the remaining rows could understate totals, so Task 2 marks affected
-daily totals as unknown.
+Trade-off: rejecting records loses usable information. Aggregating only
+the remaining rows could understate sales, so affected daily totals are
+marked unknown during aggregation.
 
 #### Restore descriptive metadata from the catalogue
 
-Missing product names and categories are restored using product IDs.
-The synthetic catalogue is treated as fixed, authoritative metadata.
+Missing names and categories are restored using product IDs and the
+fixed synthetic catalogue.
 
-Trade-off: this assumes the catalogue is correct. Real catalogues that
-change over time may require historical versions and effective dates.
+Trade-off: this assumes the catalogue is correct. Real changing
+catalogues may require historical versions and effective dates.
 
 #### Reject conflicting line IDs
 
 After exact duplicates are removed, all remaining records sharing a line
-ID are rejected rather than choosing one arbitrarily.
+ID are rejected instead of choosing one arbitrarily.
 
 Trade-off: potentially valid records are withheld until the conflict
 can be resolved.
@@ -189,9 +225,9 @@ Row accounting:
 
 Daily units sold per product.
 
-Each daily total is the sum of transaction quantities, not the number
-of transaction rows. Sales are an imperfect proxy for demand because
-inventory availability and stockouts are not represented.
+Daily units are the sum of transaction quantities, not the number of
+transaction rows. Sales may underestimate demand during stockouts;
+inventory availability is not represented in this sample.
 
 ### Daily aggregation
 
@@ -199,11 +235,11 @@ inventory availability and stockouts are not represented.
 python src/build_daily_sales.py
 ```
 
-The script reads clean sales, rejected records, raw sales, and the product
-catalogue. It creates one row per date and product across the date range
-found in valid raw dates.
+The script reads clean sales, rejected records, raw sales, and the
+catalogue. It creates one row per date and product across the date
+range found in valid raw dates.
 
-The current sample contains 184 days and 12 products: 2,208 daily rows.
+The sample contains 184 days and 12 products: 2,208 daily rows.
 
 | Column | Meaning |
 |---|---|
@@ -216,32 +252,29 @@ The current sample contains 184 days and 12 products: 2,208 daily rows.
 
 Retain all 12 products.
 
-Under the synthetic generator's complete-recording assumption, an absent
-product-day represents zero sales only where rejected records do not
+Under the synthetic generator's complete-recording assumption, absent
+product-days represent zero sales only where rejected records do not
 introduce uncertainty.
 
-- observed: sum of valid sales quantities, with no identified uncertainty.
-- assumed_zero: no sales recorded for that product-day and no identified
-  uncertainty.
-- unknown: rejected records make the total uncertain, even when some valid
-  sales remain.
+- observed: sum of valid quantities, with no identified uncertainty.
+- assumed_zero: no sales recorded and no identified uncertainty.
+- unknown: rejected records make the total uncertain, even if some
+  valid sales remain.
 
-For a rejected record with an invalid date, the script uses another raw
-line from the same transaction only if it supplies one unambiguous date.
+For a rejected record with an invalid date, another raw line from the
+same transaction is used only when it supplies one unambiguous date.
 This relies on the synthetic rule that transaction lines share a date.
 
-If the date remains unresolved, the affected product's entire period is
-marked unknown. An unknown product ID with a valid date makes all products
-uncertain on that date. If neither can be located, the entire table is
-marked uncertain.
+If the date remains unresolved, the affected product's entire period
+is marked unknown. An unknown product ID with a valid date makes all
+products uncertain on that date. If neither can be located, the entire
+table is marked uncertain.
 
-Trade-off: these conservative rules avoid false zeros and incomplete
-totals, but substantially reduce evaluation coverage. For real data,
-zero filling would require evidence of complete recording.
+Trade-off: conservative masking avoids false zeros and incomplete
+totals, but reduces evaluation coverage. Real data requires evidence
+of complete recording before absent sales can be treated as zero.
 
-Current daily statuses:
-
-| Status | Product-days |
+| Daily status | Product-days |
 |---|---:|
 | observed | 1,221 |
 | assumed_zero | 385 |
@@ -257,8 +290,8 @@ Prediction for product P on day D =
 units sold by product P exactly seven calendar days earlier
 ```
 
-For example, Bluetooth Speaker sold 3 units on 1 May 2026, so its
-prediction for 8 May 2026 is 3 units.
+Bluetooth Speaker sold 3 units on 1 May 2026, so its prediction for
+8 May 2026 is 3 units.
 
 This provides a simple benchmark for the weekly pattern built into the
 synthetic sample. It has no fitted parameters.
@@ -276,32 +309,28 @@ preserve that pattern but require more history.
 
 #### Leave unknown lag values unavailable
 
-If the total exactly seven days earlier is unknown, the script leaves
-the prediction unavailable rather than substituting zero or an average.
+An unknown seven-day-old total produces no prediction rather than a
+substituted zero or average.
 
-Trade-off: fewer forecasts are available, but the baseline does not
-invent historical sales values.
+Trade-off: fewer predictions are available, but historical sales values
+are not invented.
 
-#### Report MAE alongside evaluation coverage
+#### Report MAE alongside coverage
 
-MAE is calculated only where both the prediction and actual total are
-known. Coverage and per-product results show which observations could
-be evaluated.
+MAE uses rows where both prediction and actual are known. Coverage and
+per-product results make excluded observations visible.
 
-Trade-off: the score is interpretable for the evaluated rows, but may not
-represent excluded products or uncertain days. Future models must be
-compared on the same evaluation rows.
+Trade-off: the score describes evaluated rows and may not represent
+excluded products or uncertain days.
 
 ### Run the baseline
-
-First build the daily table, then evaluate the forecast:
 
 ```powershell
 python src/build_daily_sales.py
 python src/baseline.py
 ```
 
-To select another daily input file:
+To select another daily input:
 
 ```powershell
 python src/baseline.py --input data/processed/daily_sales.csv
@@ -309,36 +338,26 @@ python src/baseline.py --input data/processed/daily_sales.csv
 
 ### Walk-forward evaluation
 
-Evaluation advances one day at a time. Each prediction uses a value from
-exactly seven calendar days earlier, rather than seven transaction rows.
+Evaluation advances one day at a time. Each prediction uses the value
+from exactly seven calendar days earlier, not seven transaction rows.
 
-The first seven days per product are warm-up and excluded from eligible
-evaluation days. As evaluation advances, earlier actual observations
-become available for later predictions.
+The first seven days per product are warm-up. Earlier actual observations
+can become history for later one-day predictions.
 
-- A prediction requires a known seven-day-old value.
-- Scoring requires both a prediction and a known actual total.
-- Unknown historical values are not replaced with zero.
-- Unknown actual totals are excluded from scoring.
-- Products with no scored days remain visible in the per-product report.
+A prediction needs a known lag value; scoring also needs a known actual.
+Unknown actuals are excluded from scoring. Unknown values on other dates
+do not automatically prevent a prediction.
 
-An unknown value on the exact lag date prevents that prediction.
-An unknown actual prevents scoring that day. An unknown value on another
-date does not automatically block the prediction because the method
-only uses the seven-day lag.
-
-This baseline requires no refitting because it has no learned parameters.
+The baseline requires no refitting because it has no learned parameters.
 
 ### Score: mean absolute error
-
-MAE measures the average absolute prediction error in units:
 
 ```text
 MAE = sum of |actual - prediction| / number of scored product-days
 ```
 
-Overall MAE gives equal weight to each scored product-day.
-Coverage is reported alongside MAE so missing evaluations remain visible.
+MAE is measured in units and gives equal weight to each scored
+product-day. Coverage is reported alongside it.
 
 ### Current baseline results
 
@@ -351,48 +370,190 @@ Coverage is reported alongside MAE so missing evaluations remain visible.
 | Overall MAE | Approximately 1.966 units |
 | Products with scored forecasts | 9 of 12 |
 
-
 Three products (PRD-001, PRD-008, PRD-009) are excluded from MAE because each has an unresolved invalid-date sale, so their history is treated as unknown.
 
-The average absolute miss is approximately two units per scored product-day.
+These products are:
 
-The following products have uncertain histories because of unresolved
-sale dates and are excluded from scoring:
+- PRD-001: Wireless Mouse.
+- PRD-008: 27-inch LED Monitor.
+- PRD-009: 8GB DDR4 RAM.
 
-- PRD-001: Wireless Mouse
-- PRD-008: 27-inch LED Monitor
-- PRD-009: 8GB DDR4 RAM
+Their MAE is unavailable, not zero. They remain visible in the daily
+table and per-product report.
 
-Their MAE is unavailable, not zero. They remain in the daily table and
-per-product report so the exclusions are visible.
+The overall score describes only evaluated synthetic product-days.
 
-These results summarize only scored rows in synthetic data. They do not
-establish real-world forecast accuracy.
+## Task 3: Improved model with tuning
 
-### Evaluation limitation
+### Method
 
-The daily table uses a full-dataset quality audit, including transaction
-date recovery and conservative uncertainty flags.
+A RandomForestRegressor predicts daily units using:
 
-Evaluation is therefore retrospective on a fixed audited dataset.
-Record arrival timestamps are unavailable, so it does not reproduce
-historical availability of corrections or quality flags.
+- Product ID, encoded inside the fitted training pipeline.
+- Weekday, month, and days since the sample began.
+- Sales exactly 1, 7, and 14 days earlier.
+- Mean sales over the preceding seven days.
 
-The forecast rule itself uses only the seven-day-old total. Tests of that
-rule do not prove that the full aggregation audit was available at each
-historical forecast date.
+Rolling calculations are shifted before averaging, so today's target
+does not enter today's features. Unknown values remain unknown.
+
+Prediction readiness depends on available features, not on whether
+today's actual sales are known.
+
+### Training, validation, and test dates
+
+| Stage | Dates | Purpose |
+|---|---|---|
+| Training | 1 May–31 August 2026 | Fit candidate models |
+| Validation | 1–30 September 2026 | Select settings |
+| Refit | 1 May–30 September 2026 | Fit selected settings |
+| Final evaluation | 1–31 October 2026 | Compare model and baseline |
+
+October was excluded from Task 3 tuning. It appeared in earlier Task 2
+baseline analysis, so it is not a completely unseen project dataset.
+
+The model remains fixed during each evaluation window. Earlier actuals
+within the window may become historical features for later predictions;
+they are not used to refit the model within that window.
+
+### Predefined tuning search
+
+Nine combinations were evaluated on identical September rows:
+
+- min_samples_leaf: 2, 5, 10.
+- max_depth: 3, 6, unlimited.
+- n_estimators: 200, fixed.
+- random_state: 42, fixed.
+- n_jobs: 1 for sequential execution.
+- Other estimator settings: library defaults.
+
+Selection uses the lowest September MAE. Exact ties prefer shallower
+trees, then larger leaves.
+
+Selected settings:
+
+- max_depth: unlimited.
+- min_samples_leaf: 10.
+- n_estimators: 200.
+- random_state: 42.
+
+The selection was committed before October evaluation and was not
+changed in response to its results.
+
+### Improved model decisions and trade-offs
+
+#### Use a Random Forest with controlled leaf size
+
+The model can learn nonlinear relationships between products, calendar
+information, and recent sales. Larger leaves smooth observations while
+deeper trees allow more detailed relationships.
+
+Trade-off: flexible trees may overfit this small synthetic dataset.
+Chronological validation supports selection but does not establish
+real-world generalization.
+
+#### Require known historical features
+
+Training and scoring require all selected features. Unknown sales are
+not replaced with zeros or averages.
+
+The 28-day mean was removed before model tuning because its complete
+history requirement left only 244 training rows. The revised feature
+set provides 715 training rows.
+
+Trade-off: avoiding invented history reduces usable rows and coverage.
+
+#### Separate tuning from final evaluation
+
+Settings are chosen using September. The selected model is then refitted
+on May–September before October evaluation.
+
+Trade-off: one validation month provides limited evidence of performance
+across different seasons. Broader temporal backtesting belongs to Task 4.
+
+#### Compare methods on matching rows
+
+Both methods are scored on exactly the same October product-days.
+
+Trade-off: this supports a fair comparison on the evaluated subset,
+but does not measure improvement where model features are unavailable.
+
+### Run and check
+
+```powershell
+python src/features.py
+python src/tune_model.py
+python src/evaluate_model.py
+python -m pytest -q
+```
+
+The tuning script reconstructs features from daily sales through September.
+The evaluation script reconstructs features with historical context,
+reads the saved selection, and evaluates October.
+
+model_features.csv is an inspection artifact; training scripts rebuild
+features from daily_sales.csv rather than trusting a precomputed feature
+file.
+
+Output reports are overwritten when commands run. Use the recorded
+dependency snapshot when reproducing the reported model results.
+
+### Validation results
+
+| Measure | Result |
+|---|---:|
+| Training rows | 715 |
+| Matched September rows | 254 |
+| September coverage | 70.56% |
+| Selected model MAE | 1.469 units |
+| Baseline MAE on matching rows | 2.189 units |
+
+Validation scores were used for selection and are not final
+generalization estimates.
+
+### October evaluation results
+
+| Measure | Result |
+|---|---:|
+| May–September refit rows | 969 |
+| Total October product-days | 372 |
+| Model predictions available | 199 |
+| Matched scored product-days | 188 |
+| Matched scoring coverage | 50.54% |
+| Products scored | 9 of 12 |
+| Random Forest MAE | 1.517 units |
+| Seasonal naive MAE on matching rows | 1.878 units |
+| Relative MAE reduction | 19.21% |
+
+The model reduced MAE by 19.21% on the 188 matched October rows.
+This does not establish improvement across all products or missing days.
+
+PRD-001 (Wireless Mouse), PRD-008 (27-inch LED Monitor), and PRD-009
+(8GB DDR4 RAM) remain unscored because unresolved invalid-date sales
+make their histories unknown under the conservative aggregation policy.
+
+The October baseline score differs from Task 2's overall result because
+the date range and scored rows differ. Task 3 coverage is also lower
+because the model requires more historical values than the baseline.
 
 ## Output files
 
 | File | Purpose |
 |---|---|
 | data/processed/sales_clean.csv | Valid transaction lines |
-| data/processed/sales_rejected.csv | Original rejected records with reasons |
+| data/processed/sales_rejected.csv | Original rejected records and reasons |
 | reports/cleaning_report.json | Cleaning counts and repairs |
 | data/processed/daily_sales.csv | Daily units and uncertainty status |
-| reports/baseline/predictions.csv | Actuals, predictions, source dates, scoring flags, and errors |
-| reports/baseline/per_product_metrics.csv | Per-product MAE and coverage |
-| reports/baseline/metrics.json | Overall MAE, coverage, and evaluation description |
+| data/processed/model_features.csv | Inspectable past-only features |
+| reports/baseline/predictions.csv | Baseline predictions and errors |
+| reports/baseline/per_product_metrics.csv | Baseline per-product MAE and coverage |
+| reports/baseline/metrics.json | Overall baseline results |
+| reports/tuning/search_results.csv | All nine candidate validation scores |
+| reports/tuning/selection.json | Selected settings and validation metadata |
+| reports/tuning/validation_predictions.csv | Matching September predictions |
+| reports/improved_model/predictions.csv | October predictions and scoring flags |
+| reports/improved_model/per_product_metrics.csv | October per-product comparisons |
+| reports/improved_model/metrics.json | October MAE, coverage, and limitations |
 
 ## Tests and verification
 
@@ -400,103 +561,96 @@ historical forecast date.
 python -m pytest -q
 ```
 
-All 35 tests passed on Python 3.10.11 and Python 3.14.
+All 54 tests passed on Python 3.10 and Python 3.14.
 
 Tests cover:
 
-- Valid sales and expected sample cleaning results.
-- Duplicates and conflicting line IDs.
-- Missing, invalid, negative, fractional, and non-finite values.
-- Catalogue metadata repairs.
+- Valid records, duplicates, and conflicting line IDs.
+- Missing, invalid, fractional, negative, and non-finite values.
+- Catalogue repairs and expected cleaning results.
 - Missing columns, empty files, and missing files.
-- Cleaning command-line error messages.
-- Daily aggregation and supported zero filling.
-- Rejected records making partial totals unknown.
-- Exact weekly prediction values and expected MAE.
-- Unknown historical values and unknown actual totals.
-- Duplicate daily rows and calendar gaps.
-- Earlier predictions remaining unchanged when later daily values change
-  or future days are appended.
+- Daily aggregation and incomplete totals.
+- Exact baseline predictions and MAE.
+- Unknown historical values and actual totals.
+- Calendar gaps and duplicate product-date rows.
+- Exact feature values and separation of product histories.
+- Today's and future sales not changing today's features.
+- October target changes not changing tuning selection.
+- Model fitting restricted to the specified training dates.
+- Matching-row model and baseline scoring.
 
-The cleaning, daily aggregation, and baseline scripts were also verified
-in a fresh Python 3.10 environment and reproduced the tracked outputs.
-The baseline's missing-file check returned a clear error, exit code 1,
-and no traceback.
+The cleaning, aggregation, and baseline scripts were verified in a
+separate Python 3.10 environment and reproduced their tracked outputs.
+
+The baseline, tuning, and evaluation commands were manually checked
+with nonexistent input paths. Each displayed a plain error, exited with
+code 1, and showed no traceback.
+
+Task 3 tests pass on both Python versions. The recorded Task 3 tuning
+and final evaluation reports were generated on Python 3.14 with
+Scikit-learn 1.9.1; identical fitted results across versions are not claimed.
 
 ## Error handling
 
-The cleaning command reports recognized input errors with a plain message
-and nonzero exit status. Invalid individual records are saved separately.
+The cleaner reports recognized input errors with a plain message and
+nonzero exit status. Invalid individual records are saved separately.
 
-If no usable sales remain, the cleaner writes its outputs and exits with
-an explanatory error.
+If no usable sales remain, it writes outputs and exits with an
+explanatory error.
 
-The baseline rejects missing required columns, empty data, invalid dates,
-missing product IDs, duplicate product-date rows, calendar gaps, invalid
-known totals, and unrecognized statuses. It also rejects inputs with fewer
-than eight days per product or no evaluable forecasts.
+The baseline validates required columns, dates, product IDs, statuses,
+daily values, duplicate rows, calendar completeness, and minimum history.
+Inputs with no evaluable forecasts receive a clear error.
 
-Example cleaning failure check:
+Feature construction validates daily values, statuses, calendar rows,
+and product IDs. Tuning rejects missing usable training or validation
+data. Evaluation checks selection metadata, settings, feature columns,
+and the availability of matching test rows.
+
+Example failure checks:
 
 ```powershell
 python src/clean_data.py --input data/raw/does_not_exist.csv
+python src/baseline.py --input data/processed/does_not_exist.csv
+python src/tune_model.py --input data/processed/does_not_exist.csv
+python src/evaluate_model.py --input data/processed/does_not_exist.csv
 ```
 
-Expected: a clear file-not-found message and no Python traceback.
-
-Example baseline failure check:
+Each command should report an error and exit with code 1.
+Check the code immediately after a command:
 
 ```powershell
-python src/baseline.py --input data/processed/does_not_exist.csv
+$LASTEXITCODE
 ```
 
-Expected: a clear file-not-found message, exit code 1, and no traceback.
+The aggregation script expects Task 1's generated input schema.
+Its validation is less comprehensive than the cleaner's and baseline's.
 
-The aggregation script currently expects Task 1's generated input schema;
-its input validation is less comprehensive than the cleaner's and
-baseline's validation.
+## Evaluation limitations
 
-## Limitations and remaining work
+The daily table uses a full-dataset quality audit, including transaction
+date recovery and conservative uncertainty flags.
 
-- Synthetic data demonstrates functionality, not real-world accuracy.
-- Real client data has not been supplied.
-- Returns, multiple stores, inventory availability, and stockouts are
-  outside the current sample.
-- Missing records do not automatically imply zero sales in real data.
-- Conservative uncertainty rules prevent scoring three products.
-- The baseline does not directly account for promotions, holidays,
-  changing trends, or stockouts.
-- Outlier detection has not been implemented.
-- Python versions other than 3.10.11 and 3.14 have not been individually
-  verified.
-- The baseline currently evaluates historical one-day forecasts; it does
-  not yet provide a separate future-date forecasting command.
-- Improved model tuning, broader backtesting, API/container packaging,
-  and the final model card and handover belong to later tasks.
+Evaluation is retrospective on a fixed audited dataset. Record arrival
+timestamps are unavailable, so it does not reproduce historical
+availability of corrections or quality flags.
 
-  ## Task 3: Tuning plan
+Forecast features use earlier sales only. The tests do not establish
+that every full-dataset quality flag was available at each historical
+forecast date.
 
-Train on May–August 2026, select settings using September, then refit
-the selected model on May–September and evaluate once on October.
+Synthetic data and limited coverage prevent claims about production
+forecasting accuracy.
 
-Model: RandomForestRegressor.
+## Remaining work
 
-Predefined search:
-- min_samples_leaf: [2, 5, 10]
-- max_depth: [3, 6, None]
-- n_estimators: 200, fixed
-- random_state: 42, fixed
-- Other settings: library defaults
+- Broader temporal backtesting in Task 4.
+- API and container packaging in Task 5.
+- Model card, screenshots, demo, and handover in Task 6.
+- A serialized deployment model; the current evaluation refits when run.
+- A separate future-date forecasting interface.
+- Real client data and evidence of recording completeness.
+- Optional outlier analysis.
 
-Evaluate all nine combinations on identical September product-days.
-Choose the lowest validation MAE. For an exact tie, prefer shallower
-trees, then larger leaves.
-
-Decision and trade-off: larger leaves and shallower trees smooth noisy
-sales and limit overfitting, but can miss genuine changes. Smaller leaves
-and deeper trees capture more detail but may fit random variation.
-This is a practical small-data search, not a proven optimal range.
-
-Preserve September history when constructing October lag features.
-Compare the selected model and seasonal naive on matching scored rows,
-and report coverage alongside MAE. October scores will not guide tuning.
+Returns, multiple stores, inventory availability, promotions, and
+stockout effects remain outside the current sample.
